@@ -54,8 +54,8 @@
 using namespace imagenet;
 
 std::string data_path="../data/";
-//std::string model_file="../models/mnist_deepcnet.mojo";
-std::string model_file="../models/caffenet.txt"; //../models/snapshots/
+//std::string model_file="../models/caffenet.txt"; //../models/snapshots/
+std::string model_file="../models/caffenet_inf.txt"; //../models/snapshots/
 
 /*/
 #include "cifar_parser.h"
@@ -69,34 +69,34 @@ sgx_enclave_id_t eid = 0;
 
 // OCall implementations
 void ocall_print(const char* str) {
-    printf("%s\n", str);
+	printf("%s\n", str);
 }
 
 void mojo_sleep(unsigned milliseconds) 
 { 
-    mojo::usleep(milliseconds * 1000); // ?
+	mojo::usleep(milliseconds * 1000); // ?
 } 
 
 FILE *f = NULL;
 void open_file(const char* str)
 {
-    f = fopen(str, "r");
-    if(!f)
-    {
-        printf("open image file error.\n");
-        exit(0);
-    }
+	f = fopen(str, "r");
+	if(!f)
+	{
+		printf("open image file error.\n");
+		exit(0);
+	}
 }
 
 void read_file(char *dest, int sz)
 {
-    fread(dest, sz, 1, f);
+	fread(dest, sz, 1, f);
 }
 
 
 void close_file()
 {
-    if(f) fclose(f);
+	if(f) fclose(f);
 }
 
 // deep network file operations follow
@@ -105,116 +105,116 @@ FILE *output_network_file = NULL;
 
 int open_networkfile(const char* str)
 {
-    fnetwork = fopen(str, "rb");
-    if(!fnetwork)
-    {
-        printf("open deep network file error.\n");
-        return 1;
-    }
-    
-    return 0;
+	fnetwork = fopen(str, "rb");
+	if(!fnetwork)
+	{
+		printf("open deep network file error.\n");
+		return 1;
+	}
+
+	return 0;
 }
 
 int open_outputnetworkfile(const char* str)
 {
-    output_network_file = fopen(str, "wb");
-    if(!output_network_file)
-    {
-        printf("open deep network file error.\n");
-        return 1;
-    }
-    
-    return 0;
+	output_network_file = fopen(str, "wb");
+	if(!output_network_file)
+	{
+		printf("open deep network file error.\n");
+		return 1;
+	}
+
+	return 0;
 }
 
 // OCall implementations, for open_outputnetworkfile
 void ocall_fprint_networkfile(const char* str) {
-    fprintf(output_network_file, "%s", str);
+	fprintf(output_network_file, "%s", str);
 }
 
 void ocall_write(char *src, int sz)
 {
-    fwrite(src, 1, sz, fnetwork);
+	fwrite(src, 1, sz, fnetwork);
 }
 
 ////////////////
 
 // OCall implementations
 char ocall_fread_networkfile() {
-    char ret = fgetc(fnetwork);
+	char ret = fgetc(fnetwork);
 }
 
 int ocall_getint()
 {
-    int ret;
-    fscanf(fnetwork, "%d", &ret);
-    
-    return ret;
+	int ret;
+	fscanf(fnetwork, "%d", &ret);
+
+	return ret;
 }
 
 float ocall_getfloat()
 {
-    float ret;
-    fscanf(fnetwork, "%f", &ret);
-    
-    return ret;
+	float ret;
+	fscanf(fnetwork, "%f", &ret);
+
+	return ret;
 }
 
 void ocall_read(char *src, int sz)
 {
-    fread(src, 1, sz, fnetwork);
+	fread(src, 1, sz, fnetwork);
 }
 
 void ocall_read_outenclave(uint64_t src, int sz)
 {
-//    printf("address: %p, size: %d\n", src, sz);
+	//    printf("address: %p, size: %d\n", src, sz);
 
-//	mojo::matrix *m = (mojo::matrix *)src;
-			
-    fread((char *)src, 1, sz, fnetwork);
-    
-//    printf("loaded.\n");
+	//	mojo::matrix *m = (mojo::matrix *)src;
+
+	fread((char *)src, 1, sz, fnetwork);
+
+	//    printf("loaded.\n");
 }
 
 void end_this_line()
 {
-    char s[256];
+	char s[256];
 
-    fgets(s, 256, fnetwork);
+	fgets(s, 256, fnetwork);
 }
 
 void close_networkfile()
 {
-    fflush(fnetwork);
-    if(fnetwork) fclose(fnetwork);
+	fflush(fnetwork);
+	if(fnetwork) fclose(fnetwork);
 }
 
 void close_outputnetworkfile()
 {
-    fflush(output_network_file);
-    if(output_network_file) fclose(output_network_file);
+	fflush(output_network_file);
+	if(output_network_file) fclose(output_network_file);
 }
 
 uint64_t ocall_newmatrix(uint64_t * px,  int *size, int cols, int rows, int chans)
 {
-    mojo::matrix *ret = new mojo::matrix(cols, rows, chans);
-    //printf("OCALL: %p %p, size: %d, %d, cols, rows = %d %d\n", ret, ret->x, ret->size(), ret->_size, cols, rows);
-    *px = (uint64_t) ret->x; 
-    *size = ret->size();
-    
-    return (uint64_t)ret;
+	mojo::matrix *ret = new mojo::matrix(cols, rows, chans);
+	//printf("OCALL: %p %p, size: %d, %d, cols, rows = %d %d\n", ret, ret->x, ret->size(), ret->_size, cols, rows);
+	*px = (uint64_t) ret->x; 
+	*size = ret->size();
+
+	return (uint64_t)ret;
 }
 
 void ocall_fill_uniform(uint64_t pmatrix, float range)
 {
-    mojo::matrix *m = (mojo::matrix *)pmatrix;
-    m->fill_random_uniform(range);
+	mojo::matrix *m = (mojo::matrix *)pmatrix;
+	m->fill_random_uniform(range);
 }
 
 void ocall_fill_normal(uint64_t pmatrix, float std)
 {
-    mojo::matrix *m = (mojo::matrix *)pmatrix;
-    m->fill_random_normal(std);
+	mojo::matrix *m = (mojo::matrix *)pmatrix;
+	m->fill_random_normal(std);
 }
 
 void test(const std::vector<std::vector<float>> &test_images, const std::vector<int> &test_labels)
@@ -230,18 +230,18 @@ void test(const std::vector<std::vector<float>> &test_images, const std::vector<
 
 	// when MOJO_OMP is defined, we use standard "omp parallel for" loop, 
 	// the number of threads determined by network.enable_external_threads() call
-	#pragma omp parallel for reduction(+:correct_predictions) schedule(dynamic)  // dynamic schedule just helps the progress class to work correcly
+#pragma omp parallel for reduction(+:correct_predictions) schedule(dynamic)  // dynamic schedule just helps the progress class to work correcly
 	for(int k=0; k<record_cnt; k++) 
 	{
 		// predict_class returnes the output index of the highest response
-	//	printf("=================== record %d ==========\n", k);
+		//	printf("=================== record %d ==========\n", k);
 		int prediction = 0;
-		
-	//	printf("test image size: %d\n", test_images[k].size());
+
+		//	printf("test image size: %d\n", test_images[k].size());
 		classification(eid, &prediction, (float *)test_images[k].data(), test_images[k].size()); // input data
-   
-//   std::cout<<"prediction: "<<prediction<<std::endl;
-	//	const int prediction=cnn.predict_class(test_images[k].data());
+
+		//   std::cout<<"prediction: "<<prediction<<std::endl;
+		//	const int prediction=cnn.predict_class(test_images[k].data());
 		if(prediction ==test_labels[k]) correct_predictions++;
 		if(k%100==0) progress.draw_progress(k);
 	}
@@ -255,7 +255,7 @@ void test(const std::vector<std::vector<float>> &test_images, const std::vector<
 
 int main()
 {
-    sgx_status_t        ret = SGX_SUCCESS;
+	sgx_status_t        ret = SGX_SUCCESS;
 	sgx_launch_token_t  token = { 0 };
 	int updated = 0;
 
@@ -263,9 +263,9 @@ int main()
 	if (ret != SGX_SUCCESS)
 		return -1;
 	// Initializing the enclave finished.	
-	
+
 	int randnum;
-	
+
 	// == parse data
 	// array to hold image data (note that mojo does not require use of std::vector)
 	std::vector<std::vector<float>> test_images;
@@ -275,17 +275,17 @@ int main()
 	if(!parse_test_data(data_path, test_images, test_labels)) {std::cerr << "error: could not parse data.\n"; return 1;}
 
 	// == setup the network  
-//	mojo::network cnn;
-    
-    new_network(eid, model_file.c_str());
+	//	mojo::network cnn;
+
+	new_network(eid, model_file.c_str());
 	// here we need to prepare mojo cnn to store data from multiple threads
 	// !! enable_external_threads must be set prior to loading or creating a model !!
-//	cnn.enable_external_threads(); 
+	//	cnn.enable_external_threads(); 
 
 	// load model
-//	if(!cnn.read(model_file)) {std::cerr << "error: could not read model.\n"; return 1;}
-//	std::cout << "Mojo CNN Configuration:" << std::endl;
-//	std::cout << cnn.get_configuration() << std::endl << std::endl;
+	//	if(!cnn.read(model_file)) {std::cerr << "error: could not read model.\n"; return 1;}
+	//	std::cout << "Mojo CNN Configuration:" << std::endl;
+	//	std::cout << cnn.get_configuration() << std::endl << std::endl;
 
 	// == run the test
 	std::cout << "Testing " << data_name() << ":" << std::endl;
@@ -293,7 +293,7 @@ int main()
 	test(test_images, test_labels);	
 
 	std::cout << std::endl;
-	
+
 	sgx_destroy_enclave(eid);
 	return 0;
 }
