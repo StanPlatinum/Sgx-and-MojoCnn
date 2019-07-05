@@ -6,7 +6,8 @@ typedef struct ms_generate_random_number_t {
 } ms_generate_random_number_t;
 
 typedef struct ms_new_network_t {
-	char* ms_str;
+	const char* ms_str;
+	size_t ms_str_len;
 } ms_new_network_t;
 
 typedef struct ms_cnn_outsize_t {
@@ -25,6 +26,7 @@ typedef struct ms_get_epoch_t {
 
 typedef struct ms_epoch_t {
 	char* ms_str;
+	size_t ms_str_len;
 } ms_epoch_t;
 
 typedef struct ms_train_t {
@@ -33,14 +35,13 @@ typedef struct ms_train_t {
 	int ms_train_labels;
 } ms_train_t;
 
-
 typedef struct ms_get_estimated_accuracy_t {
 	float ms_retval;
 } ms_get_estimated_accuracy_t;
 
-
 typedef struct ms_write_model_file_t {
 	char* ms_model_file;
+	size_t ms_model_file_len;
 } ms_write_model_file_t;
 
 typedef struct ms_elvis_left_the_building_t {
@@ -48,13 +49,12 @@ typedef struct ms_elvis_left_the_building_t {
 } ms_elvis_left_the_building_t;
 
 typedef struct ms_ocall_print_t {
-	char* ms_str;
+	const char* ms_str;
 } ms_ocall_print_t;
 
 typedef struct ms_open_file_t {
-	char* ms_str;
+	const char* ms_str;
 } ms_open_file_t;
-
 
 typedef struct ms_read_file_t {
 	char* ms_dest;
@@ -67,16 +67,16 @@ typedef struct ms_mojo_sleep_t {
 
 typedef struct ms_open_networkfile_t {
 	int ms_retval;
-	char* ms_str;
+	const char* ms_str;
 } ms_open_networkfile_t;
 
 typedef struct ms_open_outputnetworkfile_t {
 	int ms_retval;
-	char* ms_str;
+	const char* ms_str;
 } ms_open_outputnetworkfile_t;
 
 typedef struct ms_ocall_fprint_networkfile_t {
-	char* ms_str;
+	const char* ms_str;
 } ms_ocall_fprint_networkfile_t;
 
 typedef struct ms_ocall_fread_networkfile_t {
@@ -101,13 +101,10 @@ typedef struct ms_ocall_write_t {
 	int ms_sz;
 } ms_ocall_write_t;
 
-
-
-
 static sgx_status_t SGX_CDECL Enclave_ocall_print(void* pms)
 {
 	ms_ocall_print_t* ms = SGX_CAST(ms_ocall_print_t*, pms);
-	ocall_print((const char*)ms->ms_str);
+	ocall_print(ms->ms_str);
 
 	return SGX_SUCCESS;
 }
@@ -115,7 +112,7 @@ static sgx_status_t SGX_CDECL Enclave_ocall_print(void* pms)
 static sgx_status_t SGX_CDECL Enclave_open_file(void* pms)
 {
 	ms_open_file_t* ms = SGX_CAST(ms_open_file_t*, pms);
-	open_file((const char*)ms->ms_str);
+	open_file(ms->ms_str);
 
 	return SGX_SUCCESS;
 }
@@ -146,7 +143,7 @@ static sgx_status_t SGX_CDECL Enclave_mojo_sleep(void* pms)
 static sgx_status_t SGX_CDECL Enclave_open_networkfile(void* pms)
 {
 	ms_open_networkfile_t* ms = SGX_CAST(ms_open_networkfile_t*, pms);
-	ms->ms_retval = open_networkfile((const char*)ms->ms_str);
+	ms->ms_retval = open_networkfile(ms->ms_str);
 
 	return SGX_SUCCESS;
 }
@@ -154,7 +151,7 @@ static sgx_status_t SGX_CDECL Enclave_open_networkfile(void* pms)
 static sgx_status_t SGX_CDECL Enclave_open_outputnetworkfile(void* pms)
 {
 	ms_open_outputnetworkfile_t* ms = SGX_CAST(ms_open_outputnetworkfile_t*, pms);
-	ms->ms_retval = open_outputnetworkfile((const char*)ms->ms_str);
+	ms->ms_retval = open_outputnetworkfile(ms->ms_str);
 
 	return SGX_SUCCESS;
 }
@@ -162,7 +159,7 @@ static sgx_status_t SGX_CDECL Enclave_open_outputnetworkfile(void* pms)
 static sgx_status_t SGX_CDECL Enclave_ocall_fprint_networkfile(void* pms)
 {
 	ms_ocall_fprint_networkfile_t* ms = SGX_CAST(ms_ocall_fprint_networkfile_t*, pms);
-	ocall_fprint_networkfile((const char*)ms->ms_str);
+	ocall_fprint_networkfile(ms->ms_str);
 
 	return SGX_SUCCESS;
 }
@@ -265,7 +262,8 @@ sgx_status_t new_network(sgx_enclave_id_t eid, const char* str)
 {
 	sgx_status_t status;
 	ms_new_network_t ms;
-	ms.ms_str = (char*)str;
+	ms.ms_str = str;
+	ms.ms_str_len = str ? strlen(str) + 1 : 0;
 	status = sgx_ecall(eid, 1, &ocall_table_Enclave, &ms);
 	return status;
 }
@@ -304,6 +302,7 @@ sgx_status_t epoch(sgx_enclave_id_t eid, char* str)
 	sgx_status_t status;
 	ms_epoch_t ms;
 	ms.ms_str = str;
+	ms.ms_str_len = str ? strlen(str) + 1 : 0;
 	status = sgx_ecall(eid, 5, &ocall_table_Enclave, &ms);
 	return status;
 }
@@ -347,6 +346,7 @@ sgx_status_t write_model_file(sgx_enclave_id_t eid, char* model_file)
 	sgx_status_t status;
 	ms_write_model_file_t ms;
 	ms.ms_model_file = model_file;
+	ms.ms_model_file_len = model_file ? strlen(model_file) + 1 : 0;
 	status = sgx_ecall(eid, 10, &ocall_table_Enclave, &ms);
 	return status;
 }
